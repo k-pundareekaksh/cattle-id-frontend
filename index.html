@@ -1,219 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CattleID</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CattleID</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: monospace;
+  background: #fff;
+  color: #000;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+h1 { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.25rem; }
+.subtitle { font-size: 0.8rem; color: #666; margin-bottom: 2rem; }
+hr { border: none; border-top: 1px solid #000; margin: 2rem 0; }
 
-    body {
-      font-family: monospace;
-      background: #fff;
-      color: #000;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 3rem 1.5rem;
-    }
+.upload-zone {
+  border: 1px solid #000;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+}
+.upload-zone:hover { background: #f5f5f5; }
+.upload-zone input {
+  position: absolute; inset: 0; opacity: 0;
+  cursor: pointer; width: 100%; height: 100%;
+}
+.upload-zone p { font-size: 0.85rem; color: #333; }
+.upload-zone small { font-size: 0.7rem; color: #888; display: block; margin-top: 0.4rem; }
 
-    h1 { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.25rem; }
-    .subtitle { font-size: 0.8rem; color: #666; margin-bottom: 2rem; }
-    hr { border: none; border-top: 1px solid #000; margin: 2rem 0; }
+#preview-img {
+  display: none; width: 100%; max-height: 280px;
+  object-fit: cover; border: 1px solid #000; margin-top: 1rem;
+}
 
-    .upload-zone {
-      border: 1px solid #000;
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-    }
-    .upload-zone:hover { background: #f5f5f5; }
-    .upload-zone input {
-      position: absolute; inset: 0; opacity: 0;
-      cursor: pointer; width: 100%; height: 100%;
-    }
-    .upload-zone p { font-size: 0.85rem; color: #333; }
-    .upload-zone small { font-size: 0.7rem; color: #888; display: block; margin-top: 0.4rem; }
+button {
+  width: 100%; margin-top: 1rem; padding: 0.75rem;
+  background: #000; color: #fff; border: none;
+  font-family: monospace; font-size: 0.9rem; cursor: pointer;
+}
+button:hover:not(:disabled) { background: #333; }
+button:disabled { background: #999; cursor: not-allowed; }
 
-    #preview-img {
-      display: none; width: 100%; max-height: 280px;
-      object-fit: cover; border: 1px solid #000; margin-top: 1rem;
-    }
+button.secondary {
+  background: #fff; color: #000; border: 1px solid #000;
+}
+button.secondary:hover:not(:disabled) { background: #f5f5f5; }
 
-    button {
-      width: 100%; margin-top: 1rem; padding: 0.75rem;
-      background: #000; color: #fff; border: none;
-      font-family: monospace; font-size: 0.9rem; cursor: pointer;
-    }
-    button:hover:not(:disabled) { background: #333; }
-    button:disabled { background: #999; cursor: not-allowed; }
+#result { display: none; margin-top: 2rem; }
 
-    #result { display: none; margin-top: 2rem; }
+.decision {
+  font-size: 1.2rem; font-weight: bold; padding: 1rem;
+  border: 1px solid #000; margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.decision.known  { background: #000; color: #fff; }
+.decision.unknown { background: #fff; color: #000; }
 
-    .decision {
-      font-size: 1.2rem; font-weight: bold; padding: 1rem;
-      border: 1px solid #000; margin-bottom: 1rem;
-      display: flex; align-items: center; gap: 0.75rem;
-    }
-    .decision.known   { background: #000; color: #fff; }
-    .decision.unknown { background: #fff; color: #000; }
+.row {
+  display: flex; justify-content: space-between;
+  padding: 0.5rem 0; border-bottom: 1px solid #eee; font-size: 0.82rem;
+}
+.row:last-child { border-bottom: none; }
+.row .key { color: #666; }
+.row .val { font-weight: bold; }
 
-    .row {
-      display: flex; justify-content: space-between;
-      padding: 0.5rem 0; border-bottom: 1px solid #eee; font-size: 0.82rem;
-    }
-    .row:last-child { border-bottom: none; }
-    .row .key { color: #666; }
-    .row .val { font-weight: bold; }
+.matches-title {
+  font-size: 0.75rem; color: #666; text-transform: uppercase;
+  letter-spacing: 0.1em; margin: 1.25rem 0 0.5rem;
+}
+.match {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.4rem 0; border-bottom: 1px solid #eee; font-size: 0.82rem;
+}
+.match:last-child { border-bottom: none; }
+.match .rank { color: #aaa; width: 1.5rem; }
+.match .cid  { flex: 1; }
+.match .sim  { color: #666; }
 
-    .matches-title {
-      font-size: 0.75rem; color: #666; text-transform: uppercase;
-      letter-spacing: 0.1em; margin: 1.25rem 0 0.5rem;
-    }
+.meter-wrap { margin: 1rem 0; }
+.meter-label {
+  display: flex; justify-content: space-between;
+  font-size: 0.72rem; color: #666; margin-bottom: 0.3rem;
+}
+.meter-track { height: 6px; background: #eee; position: relative; }
+.meter-fill  { height: 100%; background: #000; transition: width 0.6s ease; width: 0%; }
+.meter-tick  { position: absolute; top: -3px; left: 40%; width: 2px; height: 12px; background: #999; }
+.meter-tick::after {
+  content: 'τ=0.40'; position: absolute; top: -14px; left: 50%;
+  transform: translateX(-50%); font-size: 0.6rem; color: #999; white-space: nowrap;
+}
 
-    .match {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 0.4rem 0; border-bottom: 1px solid #eee; font-size: 0.82rem;
-    }
-    .match:last-child { border-bottom: none; }
-    .match .rank { color: #aaa; width: 1.5rem; }
-    .match .cid  { flex: 1; }
-    .match .sim  { color: #666; }
+/* ── Gallery action panels ── */
+#action-panel {
+  display: none;
+  margin-top: 1.5rem;
+  border: 1px solid #000;
+  padding: 1.25rem;
+}
+#action-panel .action-title {
+  font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.1em; margin-bottom: 1rem; color: #333;
+}
 
-    .meter-wrap { margin: 1rem 0; }
-    .meter-label {
-      display: flex; justify-content: space-between;
-      font-size: 0.72rem; color: #666; margin-bottom: 0.3rem;
-    }
-    .meter-track { height: 6px; background: #eee; position: relative; }
-    .meter-fill  { height: 100%; background: #000; transition: width 0.6s ease; width: 0%; }
-    .meter-tick  { position: absolute; top: -3px; left: 49%; width: 2px; height: 12px; background: #999; }
-    .meter-tick::after {
-      content: 'τ=0.35'; position: absolute; top: -14px; left: 50%;
-      transform: translateX(-50%); font-size: 0.6rem; color: #999; white-space: nowrap;
-    }
+.input-row {
+  display: flex; gap: 0.5rem; align-items: stretch; margin-top: 0.75rem;
+}
+.input-row input[type="text"] {
+  flex: 1; padding: 0.65rem 0.75rem;
+  border: 1px solid #000; font-family: monospace; font-size: 0.85rem;
+  outline: none;
+}
+.input-row input[type="text"]:focus { border-color: #555; }
+.input-row button { margin-top: 0; width: auto; padding: 0.65rem 1.25rem; flex-shrink: 0; }
 
-    #error {
-      display: none; margin-top: 1rem; padding: 0.75rem;
-      border: 1px solid #000; font-size: 0.8rem; background: #f5f5f5;
-    }
-  </style>
+.action-note { font-size: 0.75rem; color: #666; margin-top: 0.6rem; }
+
+/* ── Toast notification ── */
+#toast {
+  display: none;
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+  background: #000; color: #fff; font-family: monospace;
+  font-size: 0.82rem; padding: 0.65rem 1.25rem;
+  white-space: nowrap; z-index: 999;
+}
+#toast.error { background: #c00; }
+
+#error {
+  display: none; margin-top: 1rem; padding: 0.75rem;
+  border: 1px solid #000; font-size: 0.8rem; background: #f5f5f5;
+}
+</style>
 </head>
 <body>
 
-  <h1>CattleID</h1>
-  <p class="subtitle">Open-set cattle identification &middot; 468 known cattle &middot; EfficientNetB0 + ArcFace + PINN</p>
+<h1>CattleID</h1>
+<p class="subtitle">Open-set cattle identification &middot; EfficientNetB0 + ArcFace + PINN</p>
+<hr />
 
+<div class="upload-zone">
+  <input type="file" id="file-input" accept="image/jpeg,image/png" />
+  <p>Click to upload a cow image</p>
+  <small>JPG or PNG</small>
+</div>
+<img id="preview-img" alt="preview" />
+<div id="error"></div>
+
+<button id="submit-btn" disabled>Identify</button>
+
+<!-- ── Result block ── -->
+<div id="result">
   <hr />
-
-  <div class="upload-zone">
-    <input type="file" id="file-input" accept="image/jpeg,image/png" />
-    <p>Click to upload a cow image</p>
-    <small>JPG or PNG</small>
+  <div class="decision" id="decision-banner">
+    <span id="decision-icon"></span>
+    <span id="decision-text"></span>
   </div>
 
-  <img id="preview-img" alt="preview" />
-  <div id="error"></div>
-  <button id="submit-btn" disabled>Identify</button>
-
-  <div id="result">
-    <hr />
-    <div class="decision" id="decision-banner">
-      <span id="decision-icon"></span>
-      <span id="decision-text"></span>
+  <div class="meter-wrap">
+    <div class="meter-label">
+      <span>Similarity score</span>
+      <span id="sim-text">—</span>
     </div>
-
-    <div class="meter-wrap">
-      <div class="meter-label">
-        <span>Similarity score</span>
-        <span id="sim-text">—</span>
-      </div>
-      <div class="meter-track">
-        <div class="meter-fill" id="meter-fill"></div>
-        <div class="meter-tick"></div>
-      </div>
+    <div class="meter-track">
+      <div class="meter-fill" id="meter-fill"></div>
+      <div class="meter-tick"></div>
     </div>
-
-    <div class="row"><span class="key">Threshold</span><span class="val" id="r-threshold">—</span></div>
-    <div class="row"><span class="key">Gallery size</span><span class="val" id="r-gallery">—</span></div>
-    <div class="row"><span class="key">Best match</span><span class="val" id="r-match">—</span></div>
-
-    <p class="matches-title">Top 3 matches</p>
-    <div id="matches-list"></div>
   </div>
 
-  <script>
-    const API_URL = 'https://pundareekaksh-cattle-id.hf.space/predict';
+  <div class="row"><span class="key">Threshold</span><span class="val" id="r-threshold">—</span></div>
+  <div class="row"><span class="key">Gallery size</span><span class="val" id="r-gallery">—</span></div>
+  <div class="row"><span class="key">Best match</span><span class="val" id="r-match">—</span></div>
 
-    const fileInput  = document.getElementById('file-input');
-    const previewImg = document.getElementById('preview-img');
-    const submitBtn  = document.getElementById('submit-btn');
-    const errorDiv   = document.getElementById('error');
-    const resultDiv  = document.getElementById('result');
+  <p class="matches-title">Top 3 matches</p>
+  <div id="matches-list"></div>
+</div>
 
-    let selectedFile = null;
+<!-- ── Action panel (shown after result) ── -->
+<div id="action-panel">
+  <!-- UNKNOWN: register new cattle -->
+  <div id="panel-unknown" style="display:none">
+    <p class="action-title">Register this cattle in the gallery</p>
+    <p class="action-note">This cow was not recognised. Give it an ID to add it permanently.</p>
+    <div class="input-row">
+      <input type="text" id="new-cattle-id" placeholder="e.g. COW_469 or Lakshmi" maxlength="64" />
+      <button id="btn-add-unknown">Add to gallery</button>
+    </div>
+  </div>
 
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      selectedFile = file;
-      previewImg.src = URL.createObjectURL(file);
-      previewImg.style.display = 'block';
-      submitBtn.disabled = false;
-      errorDiv.style.display = 'none';
-      resultDiv.style.display = 'none';
-    });
+  <!-- KNOWN: add new photo to existing class -->
+  <div id="panel-known" style="display:none">
+    <p class="action-title">Improve recognition for this cattle</p>
+    <p class="action-note">Add this image to <strong id="known-id-label">—</strong>'s profile to improve future accuracy.</p>
+    <button id="btn-add-known">Add image to gallery</button>
+  </div>
+</div>
 
-    submitBtn.addEventListener('click', async () => {
-      if (!selectedFile) return;
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Identifying...';
-      errorDiv.style.display = 'none';
-      resultDiv.style.display = 'none';
+<!-- Toast -->
+<div id="toast"></div>
 
-      const form = new FormData();
-      form.append('image', selectedFile);
+<script>
+const API_BASE = 'https://pundareekaksh-cattle-id.hf.space';
 
-      try {
-        const res  = await fetch(API_URL, { method: 'POST', body: form });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
-        const data = await res.json();
-        render(data);
-      } catch (e) {
-        errorDiv.textContent = 'Error: ' + e.message;
-        errorDiv.style.display = 'block';
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Identify';
-      }
-    });
+const fileInput   = document.getElementById('file-input');
+const previewImg  = document.getElementById('preview-img');
+const submitBtn   = document.getElementById('submit-btn');
+const errorDiv    = document.getElementById('error');
+const resultDiv   = document.getElementById('result');
+const actionPanel = document.getElementById('action-panel');
 
-    function render(data) {
-      const banner = document.getElementById('decision-banner');
-      banner.className = 'decision ' + (data.is_known ? 'known' : 'unknown');
-      document.getElementById('decision-icon').textContent = data.is_known ? '✓' : '✗';
-      document.getElementById('decision-text').textContent = data.is_known ? 'Known Cattle' : 'Unknown Cattle';
-      document.getElementById('sim-text').textContent    = data.max_similarity.toFixed(4);
-      document.getElementById('r-threshold').textContent = data.threshold;
-      document.getElementById('r-gallery').textContent   = data.num_gallery + ' cattle';
-      document.getElementById('r-match').textContent     = data.best_match ?? 'N/A';
+let selectedFile = null;
+let lastResult   = null;   // holds most recent API response
 
-      setTimeout(() => {
-        document.getElementById('meter-fill').style.width =
-          Math.min(data.max_similarity * 100, 100) + '%';
-      }, 50);
+// ── File selection ──────────────────────────────────────────────────────────
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  selectedFile = file;
+  previewImg.src = URL.createObjectURL(file);
+  previewImg.style.display = 'block';
+  submitBtn.disabled = false;
+  errorDiv.style.display  = 'none';
+  resultDiv.style.display = 'none';
+  actionPanel.style.display = 'none';
+  lastResult = null;
+});
 
-      const list = document.getElementById('matches-list');
-      list.innerHTML = '';
-      data.top_matches.forEach((m, i) => {
-        const d = document.createElement('div');
-        d.className = 'match';
-        d.innerHTML = `<span class="rank">${i+1}</span><span class="cid">${m.cattle_id}</span><span class="sim">${m.similarity.toFixed(4)}</span>`;
-        list.appendChild(d);
-      });
+// ── Identify ────────────────────────────────────────────────────────────────
+submitBtn.addEventListener('click', async () => {
+  if (!selectedFile) return;
+  setLoading(submitBtn, 'Identifying…');
+  errorDiv.style.display    = 'none';
+  resultDiv.style.display   = 'none';
+  actionPanel.style.display = 'none';
 
-      resultDiv.style.display = 'block';
-    }
-  </script>
+  const form = new FormData();
+  form.append('image', selectedFile);
+
+  try {
+    const res = await fetch(`${API_BASE}/predict`, { method: 'POST', body: form });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
+    const data = await res.json();
+    lastResult = data;
+    render(data);
+  } catch (e) {
+    showError('Error: ' + e.message);
+  } finally {
+    resetBtn(submitBtn, 'Identify');
+  }
+});
+
+// ── Add unknown cattle ───────────────────────────────────────────────────────
+document.getElementById('btn-add-unknown').addEventListener('click', async () => {
+  const cattleId = document.getElementById('new-cattle-id').value.trim();
+  if (!cattleId) { showToast('Please enter a cattle ID first.', true); return; }
+  if (!selectedFile) return;
+
+  const btn = document.getElementById('btn-add-unknown');
+  setLoading(btn, 'Adding…');
+
+  const form = new FormData();
+  form.append('image', selectedFile);
+  form.append('cattle_id', cattleId);
+
+  try {
+    const res = await fetch(`${API_BASE}/add_unknown`, { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showToast(`✓ ${cattleId} added. Gallery now has ${data.gallery_size} cattle.`);
+    document.getElementById('panel-unknown').style.display = 'none';
+    // Update gallery count in displayed result
+    document.getElementById('r-gallery').textContent = data.gallery_size + ' cattle';
+  } catch (e) {
+    showToast('Failed: ' + e.message, true);
+  } finally {
+    resetBtn(btn, 'Add to gallery');
+  }
+});
+
+// ── Add known cattle (new image) ─────────────────────────────────────────────
+document.getElementById('btn-add-known').addEventListener('click', async () => {
+  if (!lastResult || !lastResult.best_match || !selectedFile) return;
+
+  const btn = document.getElementById('btn-add-known');
+  setLoading(btn, 'Saving…');
+
+  const form = new FormData();
+  form.append('image', selectedFile);
+  form.append('cattle_id', lastResult.best_match);
+
+  try {
+    const res = await fetch(`${API_BASE}/add_known`, { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    showToast(`✓ Image added to ${lastResult.best_match} (${data.num_images} total images).`);
+    document.getElementById('panel-known').style.display = 'none';
+  } catch (e) {
+    showToast('Failed: ' + e.message, true);
+  } finally {
+    resetBtn(btn, 'Add image to gallery');
+  }
+});
+
+// ── Render result ────────────────────────────────────────────────────────────
+function render(data) {
+  const banner = document.getElementById('decision-banner');
+  banner.className = 'decision ' + (data.is_known ? 'known' : 'unknown');
+  document.getElementById('decision-icon').textContent = data.is_known ? '✓' : '✗';
+  document.getElementById('decision-text').textContent = data.is_known ? 'Known Cattle' : 'Unknown Cattle';
+
+  document.getElementById('sim-text').textContent  = data.max_similarity.toFixed(4);
+  document.getElementById('r-threshold').textContent = data.threshold;
+  document.getElementById('r-gallery').textContent   = data.num_gallery + ' cattle';
+  document.getElementById('r-match').textContent     = data.best_match ?? 'N/A';
+
+  setTimeout(() => {
+    document.getElementById('meter-fill').style.width =
+      Math.min(data.max_similarity * 100, 100) + '%';
+  }, 50);
+
+  const list = document.getElementById('matches-list');
+  list.innerHTML = '';
+  data.top_matches.forEach((m, i) => {
+    const d = document.createElement('div');
+    d.className = 'match';
+    d.innerHTML = `<span class="rank">${i+1}</span><span class="cid">${m.cattle_id}</span><span class="sim">${m.similarity.toFixed(4)}</span>`;
+    list.appendChild(d);
+  });
+
+  resultDiv.style.display = 'block';
+
+  // Show appropriate action panel
+  actionPanel.style.display = 'block';
+  if (data.is_known) {
+    document.getElementById('panel-known').style.display  = 'block';
+    document.getElementById('panel-unknown').style.display = 'none';
+    document.getElementById('known-id-label').textContent = data.best_match;
+  } else {
+    document.getElementById('panel-unknown').style.display = 'block';
+    document.getElementById('panel-known').style.display   = 'none';
+    document.getElementById('new-cattle-id').value = '';
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function setLoading(btn, text) {
+  btn.disabled = true;
+  btn.textContent = text;
+}
+function resetBtn(btn, text) {
+  btn.disabled = false;
+  btn.textContent = text;
+}
+function showError(msg) {
+  errorDiv.textContent = msg;
+  errorDiv.style.display = 'block';
+}
+let toastTimer = null;
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'error' : '';
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+</script>
 </body>
 </html>
