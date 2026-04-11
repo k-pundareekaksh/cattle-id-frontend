@@ -89,10 +89,24 @@ button.secondary:hover:not(:disabled) { background: #f5f5f5; }
 }
 .meter-track { height: 6px; background: #eee; position: relative; }
 .meter-fill  { height: 100%; background: #000; transition: width 0.6s ease; width: 0%; }
-.meter-tick  { position: absolute; top: -3px; left: 40%; width: 2px; height: 12px; background: #999; }
+.meter-tick  { 
+  position: absolute; 
+  top: -3px; 
+  left: 0%;   /* default, will be set via JS */
+  width: 2px; 
+  height: 12px; 
+  background: #999; 
+}
+
 .meter-tick::after {
-  content: 'τ=0.40'; position: absolute; top: -14px; left: 50%;
-  transform: translateX(-50%); font-size: 0.6rem; color: #999; white-space: nowrap;
+  content: attr(data-label);
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: #999;
+  white-space: nowrap;
 }
 
 /* ── Gallery action panels ── */
@@ -309,32 +323,51 @@ document.getElementById('btn-add-known').addEventListener('click', async () => {
 function render(data) {
   const banner = document.getElementById('decision-banner');
   banner.className = 'decision ' + (data.is_known ? 'known' : 'unknown');
+
   document.getElementById('decision-icon').textContent = data.is_known ? '✓' : '✗';
   document.getElementById('decision-text').textContent = data.is_known ? 'Known Cattle' : 'Unknown Cattle';
 
-  document.getElementById('sim-text').textContent  = data.max_similarity.toFixed(4);
-  document.getElementById('r-threshold').textContent = data.threshold;
+  // Format values nicely
+  const similarity = data.max_similarity;
+  const threshold  = data.threshold;
+
+  document.getElementById('sim-text').textContent  = similarity.toFixed(4);
+  document.getElementById('r-threshold').textContent = threshold.toFixed(2);
   document.getElementById('r-gallery').textContent   = data.num_gallery + ' cattle';
   document.getElementById('r-match').textContent     = data.best_match ?? 'N/A';
 
+  // Animate similarity fill
   setTimeout(() => {
     document.getElementById('meter-fill').style.width =
-      Math.min(data.max_similarity * 100, 100) + '%';
+      Math.min(similarity * 100, 100) + '%';
   }, 50);
 
+  // 🔥 FIX: Dynamic threshold tick
+  const tick = document.querySelector('.meter-tick');
+
+  tick.style.left = (threshold * 100) + '%';
+  tick.setAttribute('data-label', `τ=${threshold.toFixed(2)}`);
+
+  // Top matches
   const list = document.getElementById('matches-list');
   list.innerHTML = '';
+
   data.top_matches.forEach((m, i) => {
     const d = document.createElement('div');
     d.className = 'match';
-    d.innerHTML = `<span class="rank">${i+1}</span><span class="cid">${m.cattle_id}</span><span class="sim">${m.similarity.toFixed(4)}</span>`;
+    d.innerHTML = `
+      <span class="rank">${i+1}</span>
+      <span class="cid">${m.cattle_id}</span>
+      <span class="sim">${m.similarity.toFixed(4)}</span>
+    `;
     list.appendChild(d);
   });
 
   resultDiv.style.display = 'block';
 
-  // Show appropriate action panel
+  // Action panel logic
   actionPanel.style.display = 'block';
+
   if (data.is_known) {
     document.getElementById('panel-known').style.display  = 'block';
     document.getElementById('panel-unknown').style.display = 'none';
